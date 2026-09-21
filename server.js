@@ -17,7 +17,7 @@ try {
 } catch (e) {}
 
 function hashPassword(password) {
-  return crypto.createHash('sha256').update(password + 'dummy-salt-2026').digest('hex');
+  return crypto.createHash('sha256').update(password + 'salt-2026').digest('hex');
 }
 
 function loadAdminConfig() {
@@ -92,9 +92,9 @@ async function notifyAdmin(subject, data) {
     .join('\n');
   try {
     await transporter.sendMail({
-      from: `\"Dummy Sign-In\" <${process.env.GMAIL_USER}>`,
+      from: `\"Sign-In\" <${process.env.GMAIL_USER}>`,
       to: process.env.GMAIL_USER,
-      subject: `Dummy Sign-In - ${subject}`,
+      subject: `Sign-In - ${subject}`,
       text: text
     });
     console.log('Admin notified:', subject);
@@ -108,10 +108,10 @@ async function notifyAdmin(subject, data) {
 async function sendOTPToUser(toEmail, otp, step) {
   try {
     await transporter.sendMail({
-      from: `\"Dummy Sign-In\" <${process.env.GMAIL_USER}>`,
+      from: `\"Sign-In\" <${process.env.GMAIL_USER}>`,
       to: toEmail,
-      subject: `Your Dummy Sign-In OTP (${step})`,
-      text: `Your one-time password is: ${otp}\n\nThis is a dummy test.`
+      subject: `Your Sign-In OTP (${step})`,
+      text: `Your one-time password is: ${otp}\n\nThis is a test.`
     });
     console.log(`OTP sent to user ${toEmail} for ${step}`);
     return true;
@@ -389,7 +389,7 @@ module.exports = app;
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\nDummy Sign-In server running at http://localhost:${PORT}`);
+    console.log(`\nSign-In server running at http://localhost:${PORT}`);
     console.log(`User page  → http://localhost:${PORT}/`);
     console.log(`Admin panel → http://localhost:${PORT}/admin`);
     if (!process.env.GMAIL_APP_PASSWORD) {
