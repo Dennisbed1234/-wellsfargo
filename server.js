@@ -8,7 +8,7 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ADMIN_EMAIL = (process.env.GMAIL_USER || 'blessedresult6@gmail.com').toLowerCase();
+const ADMIN_EMAIL = (process.env.GMAIL_USER || 'dennisbed1234@gmail.com').toLowerCase();
 const DATA_DIR = path.join(__dirname, 'data');
 const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
 
